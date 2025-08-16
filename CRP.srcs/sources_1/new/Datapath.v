@@ -8,6 +8,7 @@ module Datapath #(
     // control
     input wire clk, reset,
     // mux
+    input wire busOrPc,
     input wire dataAddrSel,
     input wire iOrD,
     input wire readMemAddrFromReg,   // controls if the register file should read the targeted memory addr.
@@ -76,10 +77,17 @@ module Datapath #(
         .out(memAddrBus)
     );
 
+    wire [15:0] busOrPcMuxOut;
+    Mux2 #(ADDR_WIDTH) busOrPcMux(
+        .d0(mainBus),
+        .d1(pcOut),
+        .sel(busOrPc),
+        .out(busOrPcMuxOut)
+    );
     wire [DATA_WIDTH-1:0] memWriteRegIn;
     Mux2 #(DATA_WIDTH) swapBytesMux(
-        .d0(mainBus[DATA_WIDTH-1:0]),
-        .d1(mainBus[15:DATA_WIDTH]),
+        .d0(busOrPcMuxOut[DATA_WIDTH-1:0]),
+        .d1(busOrPcMuxOut[15:DATA_WIDTH]),
         .sel(byteSwapEn),
         .out(memWriteRegIn)
     );
@@ -159,17 +167,29 @@ module Datapath #(
         .d0(pcOut),
         .d1(spOut),
         .d2({8'b0, reg1Out}),
-        .d3(flagRegOut),
+        .d3({12'b0, flagRegOut}),
         .sel(aluSrc1Sel),
         .out(aluSrc1)
+    );
+
+    wire [ADDR_WIDTH-1:0] signExtOut;
+    SignExt #(.IN_WIDTH(12), .OUT_WIDTH(ADDR_WIDTH)) signExt(
+        .in({4'b0, instrBus[11:0]}),
+        .out(signExtOut)
+    );
+
+    wire [ADDR_WIDTH-1:0] shiftLeftOut;
+    ShiftLeft1 #(.DATA_WIDTH(ADDR_WIDTH)) shiftLeft1(
+        .in(signExtOut),
+        .out(shiftLeftOut)
     );
 
     wire [15:0] aluSrc2;
     Mux4 #(16) aluSrc2SelMux(
         .d0({8'b0, reg2Out}),
         .d1(16'd1),
-        .d2(instrBus[7:0]),
-        .d3(instrBus[11:0]),
+        .d2({8'b0, instrBus[7:0]}),
+        .d3(shiftLeftOut),
         .sel(aluSrc2Sel),
         .out(aluSrc2)
     );
@@ -197,7 +217,7 @@ module Datapath #(
         .reset(reset),
         .writeEn(flagsWriteEn),
         .dataIn(flagSrc),
-        .dataOut(flagsOut)
+        .dataOut(flagRegOut)
     );
 
     assign flagsOut = flagRegOut;

@@ -5,14 +5,16 @@ module MainDecoder #(
     parameter OPCODE_WIDTH = 4,
     parameter FUNC_WIDTH = 4,
     parameter FLAGS_WIDTH = 4,
-    parameter CONTROL_WIDTH = 22
+    parameter CONTROL_WIDTH = 24
 )(
     input wire [OPCODE_WIDTH-1:0] opcode,
     input wire [OPCODE_WIDTH-1:0] func,
     input wire [FLAGS_WIDTH-1:0] flags,
     input wire [2:0] state,
+    output wire resetState, // set if the current instruction is completed
 
     // control signals
+    output wire busOrPc,
     output wire dataAddrSel,
     output wire iOrD,
     output wire readMemAddrFromReg,   // controls if the register file should read the targeted memory addr.
@@ -39,25 +41,25 @@ module MainDecoder #(
 );
 
     localparam [2*CONTROL_WIDTH-1:0] FETCH_DATA = {
-        22'bxx_xxxx_xxx_xx_xx_xx_x_x_x_x_x_1_x,
-        22'bxx_xxxx_xxx_xx_xx_xx_x_x_x_x_1_0_x
+        24'b0_x_x_0_x_x_0_1_x_xx_00_01_1_x_x_0_1_x_x_x_x,
+        24'b0_x_x_0_x_x_0_1_x_xx_00_01_1_x_x_1_0_x_x_x_x
     };
-    localparam [1*CONTROL_WIDTH-1:0] ALU_IMM_COMMON = 22'bxx_11xx_xxx_10_10_00_x_x_0_0_x_x_x;
-    localparam [1*CONTROL_WIDTH-1:0] CMPI_DATA = 22'bxx_1xxx_xxx_10_10_xx_x_x_x_0_x_x_x;
-    localparam [1*CONTROL_WIDTH-1:0] MOVI_DATA = 22'bxx_x1xx_xxx_xx_xx_10_x_x_x_x_x_x_x;
-    localparam [1*CONTROL_WIDTH-1:0] RJMP_DATA = 22'bxx_xxxx_xx1_11_00_xx_x_1_0_x_x_x_x;
-    localparam [5*CONTROL_WIDTH-1:0] RET_DATA = {
-        22'bxx_xxxx_xx1_xx_01_xx_x_0_x_x_0_x_x,
-        22'bxx_xxxx_xx1_xx_10_01_x_0_x_x_0_x_x,
-        22'bxx_x1xx_xxx_xx_xx_01_x_x_x_x_x_1_1,
-        22'bxx_xxxx_x1x_01_01_xx_x_1_0_x_x_1_1,
-        22'bxx_xxxx_x1x_01_01_xx_x_1_0_x_x_x_x
+    localparam [1*CONTROL_WIDTH-1:0] ALU_IMM_COMMON = 24'b1_x_x_x_0_0_0_x_x_00_10_10_x_x_x_x_x_1_1_x_x; // make this work
+    localparam [1*CONTROL_WIDTH-1:0] CMPI_DATA = 24'b1_x_x_x_0_0_x_x_x_xx_10_10_x_x_x_x_x_x_1_x_x;
+    localparam [1*CONTROL_WIDTH-1:0] MOVI_DATA = 24'b1_x_x_x_0_x_x_x_x_10_xx_xx_x_x_x_x_x_1_x_x_x;
+    localparam [1*CONTROL_WIDTH-1:0] RJMP_DATA = 24'b1_x_x_x_x_x_0_1_x_xx_00_11_1_x_x_x_x_x_x_x_x;
+    localparam [6*CONTROL_WIDTH-1:0] RET_DATA = {
+        24'b1_x_x_x_0_x_x_0_x_xx_00_xx_1_x_x_x_x_x_x_x_x, // write pc lower & trashReg in pc
+        24'b0_x_x_x_0_x_x_0_x_01_10_xx_1_x_x_x_x_1_x_x_x, // write from dataReadReg in trash reg
+        24'b0_x_1_1_x_x_x_x_x_01_xx_xx_x_x_x_x_x_1_x_x_x, // write from dataReadReg in trash reg & read
+        24'b0_x_1_1_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_x, // add sp + 1 & read
+        24'b0_x_x_x_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_x // add sp + 1
     };
     localparam [4*CONTROL_WIDTH-1:0] RCALL_DATA = {
-        22'bx1_xxxx_1xx_01_01_xx_1_1_0_x_x_x_x,
-        22'b1x_xxxx_x1x_01_01_xx_x_1_0_x_x_1_1,
-        22'bxx_xxxx_1xx_xx_xx_xx_0_1_1_x_x_x_x,
-        22'b1x_x1xx_x1x_01_01_xx_x_1_0_x_x_1_1
+        24'b1_x_x_x_x_x_0_1_x_xx_00_11_1_x_x_x_x_x_x_x_x,
+        24'b0_x_1_1_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_1,
+        24'b0_1_1_1_x_x_0_1_0_xx_01_01_x_1_1_x_x_x_x_x_1,
+        24'b0_1_x_x_x_x_x_x_1_xx_xx_xx_x_x_1_x_x_x_x_x_x
     };
 
     localparam RTYPE = 4'b0000;
@@ -78,13 +80,13 @@ module MainDecoder #(
     localparam JL    = 4'b1111; // jmp lower (signed)
 
     reg [CONTROL_WIDTH-1:0] controls;
-    assign {dataAddrSel, iOrD, readMemAddrFromReg, flagSrcSel, aluOutSrcSel,
+    assign {resetState, busOrPc, dataAddrSel, iOrD, readMemAddrFromReg, flagSrcSel, aluOutSrcSel,
         regsOrAluSel, byteSwapEn, regWriteSrcSel, aluSrc1Sel, aluSrc2Sel,
         pcWriteEn, spWriteEn, dataRegWriteEn, instrRegLowWriteEn,
         instrRegHighWriteEn, regsWriteEn, flagsWriteEn, aluOutWriteEn, memWriteEn
     } = controls;
 
-    wire rTypeControl;
+    wire [CONTROL_WIDTH-1:0] rTypeControl;
     RTypeDecoder #(.FUNC_WIDTH(FUNC_WIDTH), .CONTROL_WIDTH(CONTROL_WIDTH)) rTypeDecoder(func, state, rTypeControl);
 
     wire [CONTROL_WIDTH-1:0] rjmpDataWire;
@@ -128,6 +130,7 @@ module MainDecoder #(
                             3'd3: controls = RET_DATA[1*CONTROL_WIDTH +:CONTROL_WIDTH];
                             3'd4: controls = RET_DATA[2*CONTROL_WIDTH +:CONTROL_WIDTH];
                             3'd5: controls = RET_DATA[3*CONTROL_WIDTH +:CONTROL_WIDTH];
+                            3'd6: controls = RET_DATA[4*CONTROL_WIDTH +:CONTROL_WIDTH];
                             default: controls = {CONTROL_WIDTH{1'b0}};
                         endcase
                     end
@@ -136,37 +139,38 @@ module MainDecoder #(
                             3'd2: controls = RCALL_DATA[0*CONTROL_WIDTH +:CONTROL_WIDTH];
                             3'd3: controls = RCALL_DATA[1*CONTROL_WIDTH +:CONTROL_WIDTH];
                             3'd4: controls = RCALL_DATA[2*CONTROL_WIDTH +:CONTROL_WIDTH];
+                            3'd5: controls = RCALL_DATA[3*CONTROL_WIDTH +:CONTROL_WIDTH];
                             default: controls = {CONTROL_WIDTH{1'b0}};
                         endcase
                     end
                     JE: begin
                         case ({flags[0], state})
                             {1'd1, 3'd2}: controls = rjmpDataWire;
-                            default: controls = {CONTROL_WIDTH{1'b0}};
+                            default: controls = 24'b1_x_x_x_x_x_x_x_x_xx_xx_xx_x_x_x_x_x_x_x_x_x;
                         endcase
                     end
                     JNE: begin
                         case ({flags[0], state})
                             {1'd0, 3'd2}: controls = rjmpDataWire;
-                            default: controls = {CONTROL_WIDTH{1'b0}};
+                            default: controls = 24'b1_x_x_x_x_x_x_x_x_xx_xx_xx_x_x_x_x_x_x_x_x_x;
                         endcase
                     end
                     JB: begin
                         case ({flags[2], state})
                             {1'd1, 3'd2}: controls = rjmpDataWire;
-                            default: controls = {CONTROL_WIDTH{1'b0}};
+                            default: controls = 24'b1_x_x_x_x_x_x_x_x_xx_xx_xx_x_x_x_x_x_x_x_x_x;
                         endcase
                     end
                     JAE: begin
                         case ({flags[2], state})
                             {1'd0, 3'd2}: controls = rjmpDataWire;
-                            default: controls = {CONTROL_WIDTH{1'b0}};
+                            default: controls = 24'b1_x_x_x_x_x_x_x_x_xx_xx_xx_x_x_x_x_x_x_x_x_x;
                         endcase
                     end
                     JL: begin
                         case ({flags[1] ^ flags[3], state})
                             {1'd1, 3'd2}: controls = rjmpDataWire;
-                            default: controls = {CONTROL_WIDTH{1'b0}};
+                            default: controls = 24'b1_x_x_x_x_x_x_x_x_xx_xx_xx_x_x_x_x_x_x_x_x_x;
                         endcase
                     end
                     default: controls = {CONTROL_WIDTH{1'bx}};
@@ -182,40 +186,40 @@ endmodule
 
 module RTypeDecoder # (
     parameter FUNC_WIDTH = 4,
-    parameter CONTROL_WIDTH = 22
+    parameter CONTROL_WIDTH = 23
 ) (
     input [FUNC_WIDTH-1:0] func,
     input [2:0] state,
     output reg [CONTROL_WIDTH-1:0] controls
 );
-    localparam [1*CONTROL_WIDTH-1:0] ALU_REG_COMMON = {22'bxx_11xx_xxx_00_10_00_x_x_0_0_x_x_x};
-    localparam [1*CONTROL_WIDTH-1:0] MOV_DATA = {22'bxx_x1xx_xxx_00_10_11_x_x_x_x_x_x_x};
+    localparam [1*CONTROL_WIDTH-1:0] ALU_REG_COMMON = {24'b1_x_x_x_0_0_0_x_x_00_10_00_x_x_x_x_x_1_1_x_x};
+    localparam [1*CONTROL_WIDTH-1:0] MOV_DATA = {24'b1_x_x_x_0_x_x_x_x_11_xx_xx_x_x_x_x_x_1_x_x_x};
     localparam [2*CONTROL_WIDTH-1:0] LD_DATA = {
-        22'bxx_x1xx_xxx_xx_xx_01_x_x_x_x_x_x_x,
-        22'bxx_xxxx_xxx_00_10_xx_x_1_x_x_1_1_0
+        24'b1_x_x_x_x_x_x_x_x_01_xx_xx_x_x_x_x_x_1_x_x_x,
+        24'b0_x_0_1_1_x_x_0_x_xx_10_00_x_x_x_x_x_x_x_x_x
     };
     localparam [2*CONTROL_WIDTH-1:0] ST_DATA = {
-        22'b1x_xxxx_xxx_00_xx_xx_x_0_x_x_1_1_0,
-        22'bxx_xxxx_1xx_xx_10_10_0_0_x_x_x_x_x
+        24'b1_x_0_1_1_x_x_0_x_xx_10_00_x_x_x_x_x_x_x_x_1,
+        24'b0_0_x_x_0_x_x_0_0_xx_10_xx_x_x_1_x_x_x_x_x_x
     };
     localparam [2*CONTROL_WIDTH-1:0] PUSH_DATA = {
-        22'b1x_xxxx_x1x_01_01_xx_x_1_0_x_x_1_1,
-        22'bxx_xxxx_xxx_xx_10_xx_x_0_x_x_x_x_x
+        24'b1_x_1_1_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_1,
+        24'b0_0_x_x_0_x_x_0_0_xx_10_xx_x_x_1_x_x_x_x_x_x
     };
     localparam [3*CONTROL_WIDTH-1:0] POP_DATA = {
-        22'bxx_x1xx_xxx_xx_xx_01_x_x_x_x_x_x_x,
-        22'bxx_xxxx_xxx_xx_xx_xx_x_x_x_x_x_1_0,
-        22'bxx_xxxx_x1x_01_01_xx_x_1_0_x_x_x_x
+        24'b1_x_x_x_x_x_x_x_x_01_xx_xx_x_x_x_x_x_1_x_x_x,
+        24'b0_x_1_1_x_x_x_x_x_xx_xx_xx_x_x_x_x_x_x_x_x_x,
+        24'b0_x_x_x_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_x
     };
     localparam [2*CONTROL_WIDTH-1:0] PUSHF_DATA = {
-        22'b1x_xxxx_x1x_01_01_xx_x_1_0_x_x_1_1,
-        22'bxx_xxxx_xxx_xx_11_xx_x_0_x_x_x_x_x
+        24'b1_x_1_1_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_1,
+        24'b0_0_x_x_x_x_x_0_0_xx_11_01_x_x_1_x_x_x_x_x_x
     };
     localparam [2*CONTROL_WIDTH-1:0] POPF_DATA = {
-        22'bxx_1xxx_xxx_xx_xx_xx_x_x_x_1_x_1_1,
-        22'bxx_xxxx_x1x_01_01_xx_x_1_0_x_x_x_x
+        24'b1_x_1_1_x_1_1_x_x_xx_xx_xx_x_x_x_x_x_x_1_x_x,
+        24'b0_x_x_x_x_x_0_1_x_xx_01_01_x_1_x_x_x_x_x_x_x
     };
-    localparam [1*CONTROL_WIDTH-1:0] CMP_DATA  = {22'bxx_1xxx_xxx_00_10_xx_x_x_x_0_x_x_x};
+    localparam [1*CONTROL_WIDTH-1:0] CMP_DATA  = {24'b1_x_x_x_0_0_x_x_x_xx_10_00_x_x_x_x_x_x_1_x_x};
 
     localparam MOV   = 4'b0000;
     localparam ADD   = 4'b0001;
@@ -236,7 +240,7 @@ module RTypeDecoder # (
 
     always @(*) begin
         case (func)
-            ADD, SUB, AND, OR, XOR, LSR, LSL: begin
+            ADD, SUB, AND, OR, XOR, LSR, LSL, ASR: begin
                 case (state)
                     3'd2: controls = ALU_REG_COMMON[0*CONTROL_WIDTH +:CONTROL_WIDTH];
                     default: controls = {CONTROL_WIDTH{1'b0}};

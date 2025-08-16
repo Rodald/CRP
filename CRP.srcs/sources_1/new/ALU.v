@@ -1,7 +1,8 @@
 module ALU #(
-    parameter DATA_WIDTH = 8
+    parameter DATA_WIDTH = 16,
+    parameter REG_DATA_WIDTH = 8
 )(
-    input [3:0] aluControl,
+    input [2:0] aluControl,
     input [DATA_WIDTH-1:0] src1,
     input [DATA_WIDTH-1:0] src2,
     output reg [4-1:0] flags,
@@ -16,9 +17,9 @@ module ALU #(
     localparam LSR = 3'b110;
     localparam ASR = 3'b111;
 
-    wire sign_a = src1[DATA_WIDTH-1];
-    wire sign_b = src2[DATA_WIDTH-1];
-    wire sign_r = result[DATA_WIDTH-1];
+    wire sign_a = src1[REG_DATA_WIDTH-1];
+    wire sign_b = src2[REG_DATA_WIDTH-1];
+    wire sign_r = result[REG_DATA_WIDTH-1];
 
     // output wire contrains 8 data bits and the 9th carry/borrow bit
     reg signed [DATA_WIDTH:0] outputWire;
@@ -30,22 +31,22 @@ module ALU #(
         case (aluControl)
             ADD: outputWire = src1 + src2;
             SUB_CMP: outputWire = src1 - src2;
-            AND: outputWire = src1 & src2;
-            OR:  outputWire = src1 | src2;
-            XOR: outputWire = src1 ^ src2;
+            AND: outputWire = src1[REG_DATA_WIDTH-1:0] & src2[REG_DATA_WIDTH-1:0];
+            OR:  outputWire = src1[REG_DATA_WIDTH-1:0] | src2[REG_DATA_WIDTH-1:0];
+            XOR: outputWire = src1[REG_DATA_WIDTH-1:0] ^ src2[REG_DATA_WIDTH-1:0];
             // only use first 3 bits for shiftig. No need to shift a num 255x
-            LSL: outputWire = src1 << src2[2:0];
-            LSR: outputWire = src1 >> src2[2:0];
-            ASR: outputWire[DATA_WIDTH-1:0] = $signed(src1) >>> src2[2:0];
+            LSL: outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] << src2[2:0];
+            LSR: outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] >> src2[2:0];
+            ASR: outputWire[REG_DATA_WIDTH-1:0] = $signed(src1[REG_DATA_WIDTH-1:0]) >>> src2[2:0];
             default: outputWire = {DATA_WIDTH{1'bx}};
 
         endcase
 
         result = outputWire[DATA_WIDTH-1:0];
 
-        flags[0] = (result == 0);
-        flags[1] = result[DATA_WIDTH-1];
-        flags[2] = outputWire[DATA_WIDTH];
+        flags[0] = (result[REG_DATA_WIDTH-1:0] == 0);
+        flags[1] = result[REG_DATA_WIDTH-1];
+        flags[2] = outputWire[REG_DATA_WIDTH];
         // Overflow ADD: (+) + (+) = (-) or (-) + (-) = (+)
         // Overflow SUB: (+) - (-) = (-) or (-) - (+) = (+)
         flags[3] = (aluControl == ADD) ? (~sign_a & ~sign_b & sign_r) | (sign_a & sign_b & ~sign_r)

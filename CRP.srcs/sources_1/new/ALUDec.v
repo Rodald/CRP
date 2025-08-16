@@ -41,46 +41,46 @@ module ALUDec #(
             RTYPE: aluControl = rTypeControl;
             CMPI, SUBI: begin
                 case (state)
-                    3'd3: aluControl = SUB_CTRL;
+                    3'd2: aluControl = SUB_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
             ADDI, RJMP, JE, JNE, JB, JAE, JL: begin
                 case (state)
-                    3'd3: aluControl = ADD_CTRL;
+                    3'd2: aluControl = ADD_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
             ANDI: begin
                 case (state)
-                    3'd3: aluControl = AND_CTRL;
+                    3'd2: aluControl = AND_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
             ORI: begin
                 case (state)
-                    3'd3: aluControl = OR_CTRL;
+                    3'd2: aluControl = OR_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
             XORI: begin
                 case (state)
-                    3'd3: aluControl = XOR_CTRL;
+                    3'd2: aluControl = XOR_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
             RET: begin
                 case (state)
+                    3'd2: aluControl = ADD_CTRL;
                     3'd3: aluControl = ADD_CTRL;
-                    3'd4: aluControl = ADD_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
             RCALL: begin
                 case (state)
-                    3'd3: aluControl = ADD_CTRL;
+                    3'd3: aluControl = SUB_CTRL;
                     3'd4: aluControl = SUB_CTRL;
-                    3'd6: aluControl = SUB_CTRL;
+                    3'd5: aluControl = ADD_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end
@@ -125,68 +125,68 @@ module ALURtypeDec #(
         case (func)
             ADD: begin
                 case (state)
-                3'd3: aluControl = ADD_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = ADD_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             SUB, CMP: begin
                 case (state)
-                3'd3: aluControl = SUB_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = SUB_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             AND: begin
                 case (state)
-                3'd3: aluControl = AND_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = AND_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             OR: begin
                 case (state)
-                3'd3: aluControl = OR_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = OR_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             XOR: begin
                 case (state)
-                3'd3: aluControl = XOR_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = XOR_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             PUSH, PUSHF: begin
                 case (state)
-                3'd4: aluControl = SUB_CTRL;
-                default: aluControl = 3'b000;
+                    3'd3: aluControl = SUB_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             POP, POPF: begin
                 case (state)
-                3'd3: aluControl = ADD_CTRL;
-                default: aluControl = 3'b000;
+                    3'd3: aluControl = ADD_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             LSR: begin
                 case (state)
-                3'd3: aluControl = LSR_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = LSR_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             LSL: begin
                 case (state)
-                3'd3: aluControl = LSL_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = LSL_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             ASR: begin
                 case (state)
-                3'd3: aluControl = ASR_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = ASR_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             LSR: begin
                 case (state)
-                3'd3: aluControl = LSR_CTRL;
-                default: aluControl = 3'b000;
+                    3'd2: aluControl = LSR_CTRL;
+                    default: aluControl = 3'b000;
                 endcase
             end
             default: aluControl = 3'b000;
