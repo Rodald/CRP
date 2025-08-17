@@ -79,8 +79,8 @@ module ALUDec #(
             RCALL: begin
                 case (state)
                     3'd3: aluControl = SUB_CTRL;
-                    3'd4: aluControl = SUB_CTRL;
-                    3'd5: aluControl = ADD_CTRL;
+                    3'd4: aluControl = ADD_CTRL;
+                    3'd5: aluControl = SUB_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end

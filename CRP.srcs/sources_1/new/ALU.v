@@ -1,5 +1,5 @@
 module ALU #(
-    parameter DATA_WIDTH = 16,
+    parameter DATA_WIDTH = 15, // has to be higher than REG_DATA_WIDTH
     parameter REG_DATA_WIDTH = 8
 )(
     input [2:0] aluControl,
@@ -22,7 +22,7 @@ module ALU #(
     wire sign_r = result[REG_DATA_WIDTH-1];
 
     // output wire contrains 8 data bits and the 9th carry/borrow bit
-    reg signed [DATA_WIDTH:0] outputWire;
+    reg signed [DATA_WIDTH-1:0] outputWire;
 
     always @(*) begin
         outputWire = 0;

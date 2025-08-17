@@ -1,14 +1,13 @@
 module Datapath #(
-    parameter PC_WIDTH = 16,
-    parameter SP_WIDTH = 16,
+    parameter ADDR_WIDTH = 15,
+    parameter PC_WIDTH = ADDR_WIDTH,
+    parameter SP_WIDTH = ADDR_WIDTH,
     parameter DATA_WIDTH = 8,
-    parameter INSTR_WIDTH = 16,
-    parameter ADDR_WIDTH = 16
+    parameter INSTR_WIDTH = 16
 )(
     // control
     input wire clk, reset,
     // mux
-    input wire busOrPc,
     input wire dataAddrSel,
     input wire iOrD,
     input wire readMemAddrFromReg,   // controls if the register file should read the targeted memory addr.
@@ -26,7 +25,6 @@ module Datapath #(
     // write signals
     input wire pcWriteEn,
     input wire spWriteEn,
-    input wire dataRegWriteEn,
     input wire instrRegLowWriteEn,
     input wire instrRegHighWriteEn,
     input wire regsWriteEn,
@@ -35,14 +33,13 @@ module Datapath #(
 
     // memory
     input wire [DATA_WIDTH-1:0] memReadBus,
-    output wire [ADDR_WIDTH-1:0] memAddrBus,
-    output wire [DATA_WIDTH-1:0] memWriteBus,
+    output wire [ADDR_WIDTH-1:0] memReqBus,
 
     // flags
     output wire [3:0] flagsOut,
     output wire [INSTR_WIDTH-1:0] instrBusOut
 );
-    wire [15:0] mainBus;
+    wire [14:0] mainBus;
 
     wire [PC_WIDTH-1:0] pcOut;
     Register #(PC_WIDTH, {PC_WIDTH{1'b0}}) pc(
@@ -70,34 +67,22 @@ module Datapath #(
         .out(dataAddr)
     );
 
+    wire [ADDR_WIDTH-1:0] iOrDMuxOut;
     Mux2 #(ADDR_WIDTH) iOrDMux(
         .d0(pcOut),
         .d1(dataAddr),
         .sel(iOrD),
-        .out(memAddrBus)
+        .out(iOrDMuxOut)
     );
 
-    wire [15:0] busOrPcMuxOut;
-    Mux2 #(ADDR_WIDTH) busOrPcMux(
-        .d0(mainBus),
-        .d1(pcOut),
-        .sel(busOrPc),
-        .out(busOrPcMuxOut)
-    );
-    wire [DATA_WIDTH-1:0] memWriteRegIn;
-    Mux2 #(DATA_WIDTH) swapBytesMux(
-        .d0(busOrPcMuxOut[DATA_WIDTH-1:0]),
-        .d1(busOrPcMuxOut[15:DATA_WIDTH]),
+
+    Mux2 #(ADDR_WIDTH) swapBytesMux(
+        .d0(iOrDMuxOut[ADDR_WIDTH-1:0]),
+        .d1({iOrDMuxOut[6:0], 1'b0, iOrDMuxOut[14:8]}),
+        // also try this:
+        //.d1({iOrDMuxOut[7:0], iOrDMuxOut[14:8]}),
         .sel(byteSwapEn),
-        .out(memWriteRegIn)
-    );
-
-    Register #(DATA_WIDTH, {DATA_WIDTH{1'b0}}) memWriteReg(
-        .clk(clk),
-        .reset(reset),
-        .writeEn(dataRegWriteEn),
-        .dataIn(memWriteRegIn),
-        .dataOut(memWriteBus)
+        .out(memReqBus)
     );
 
     wire [INSTR_WIDTH-1:0] instrBus;
@@ -125,7 +110,7 @@ module Datapath #(
     Mux4 #(DATA_WIDTH) regWriteDataMux(
         .d0(aluOutBus[DATA_WIDTH-1:0]),
         .d1(memReadData),
-        .d2(instrBus[7:0]),
+        .d2(instrBus[DATA_WIDTH-1:0]),
         .d3(reg2Out),
         .sel(regWriteSrcSel),
         .out(regWriteData)
@@ -161,20 +146,20 @@ module Datapath #(
         .reg2(reg2Out)
     );
 
-    wire [15:0] aluSrc1;
+    wire [14:0] aluSrc1;
     wire [3:0] flagRegOut;
-    Mux4 #(16) aluSrc1SelMux(
+    Mux4 #(15) aluSrc1SelMux(
         .d0(pcOut),
         .d1(spOut),
-        .d2({8'b0, reg1Out}),
-        .d3({12'b0, flagRegOut}),
+        .d2({7'b0, reg1Out}),
+        .d3({11'b0, flagRegOut}),
         .sel(aluSrc1Sel),
         .out(aluSrc1)
     );
 
     wire [ADDR_WIDTH-1:0] signExtOut;
     SignExt #(.IN_WIDTH(12), .OUT_WIDTH(ADDR_WIDTH)) signExt(
-        .in({4'b0, instrBus[11:0]}),
+        .in(instrBus[11:0]),
         .out(signExtOut)
     );
 
@@ -184,19 +169,19 @@ module Datapath #(
         .out(shiftLeftOut)
     );
 
-    wire [15:0] aluSrc2;
-    Mux4 #(16) aluSrc2SelMux(
-        .d0({8'b0, reg2Out}),
-        .d1(16'd1),
-        .d2({8'b0, instrBus[7:0]}),
+    wire [14:0] aluSrc2;
+    Mux4 #(15) aluSrc2SelMux(
+        .d0({7'b0, reg2Out}),
+        .d1(15'd1),
+        .d2({7'b0, instrBus[7:0]}),
         .d3(shiftLeftOut),
         .sel(aluSrc2Sel),
         .out(aluSrc2)
     );
 
     wire [3:0] aluFlagsOut;
-    wire [15:0] aluResult;
-    ALU #(16, DATA_WIDTH) alu(
+    wire [14:0] aluResult;
+    ALU #(15, DATA_WIDTH) alu(
         .aluControl(aluControl),
         .src1(aluSrc1),
         .src2(aluSrc2),
@@ -212,7 +197,7 @@ module Datapath #(
         .out(flagSrc)
     );
 
-    Register #(4, 8'b0) flagReg(
+    Register #(4, 4'b0) flagReg(
         .clk(clk),
         .reset(reset),
         .writeEn(flagsWriteEn),
@@ -222,8 +207,8 @@ module Datapath #(
 
     assign flagsOut = flagRegOut;
 
-    wire [15:0] aluOutRegOut;
-    Register #(16, 8'b0) aluOutReg(
+    wire [14:0] aluOutRegOut;
+    Register #(15, 15'b0) aluOutReg(
         .clk(clk),
         .reset(reset),
         .writeEn(aluOutWriteEn),
@@ -231,17 +216,18 @@ module Datapath #(
         .dataOut(aluOutRegOut)
     );
 
-    wire [15:0] aluOutBus;
-    Mux2 #(16) aluOutSrcSelMux(
+    wire [14:0] aluOutBus;
+    Mux2 #(15) aluOutSrcSelMux(
         .d0(aluResult),
         .d1(aluOutRegOut),
         .sel(aluOutSrcSel),
         .out(aluOutBus)
     );
 
-    wire [15:0] regBus;
-    assign regBus = {reg2Out[DATA_WIDTH-1:0], aluSrc1[DATA_WIDTH-1:0]};
-    Mux2 #(16) regsOrAluSelMux(
+    wire [14:0] regBus;
+    // chop off last bit from reg2 (addrWidth is only 15 bit)
+    assign regBus = {reg2Out[DATA_WIDTH-2:0], aluSrc1[DATA_WIDTH-1:0]};
+    Mux2 #(15) regsOrAluSelMux(
         .d0(regBus),
         .d1(aluOutBus),
         .sel(regsOrAluSel),
