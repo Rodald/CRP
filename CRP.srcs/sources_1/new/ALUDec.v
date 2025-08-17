@@ -183,12 +183,6 @@ module ALURtypeDec #(
                     default: aluControl = 3'b000;
                 endcase
             end
-            LSR: begin
-                case (state)
-                    3'd2: aluControl = LSR_CTRL;
-                    default: aluControl = 3'b000;
-                endcase
-            end
             default: aluControl = 3'b000;
         endcase
     end

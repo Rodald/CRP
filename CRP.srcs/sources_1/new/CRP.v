@@ -37,12 +37,12 @@ module CRP #(
     wire [INSTR_WIDTH-1:0] instrBus;
 
     wire [2:0] aluControl;
-    Controler #(
+    Controller #(
         .OPCODE_WIDTH(OPCODE_WIDTH),
         .FUNC_WIDTH(FUNC_WIDTH),
         .FLAGS_WIDTH(FLAGS_WIDTH),
         .CONTROL_WIDTH(CONTROL_WIDTH)
-    ) controler (
+    ) controller (
         .clk(clk),
         .reset(reset),
         .opcode(instrBus[INSTR_WIDTH-1 -:4]),
