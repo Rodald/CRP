@@ -2,7 +2,7 @@ module CRP #(
     parameter OPCODE_WIDTH = 4,
     parameter FUNC_WIDTH = 4,
     parameter FLAGS_WIDTH = 4,
-    parameter CONTROL_WIDTH = 22,
+    parameter CONTROL_WIDTH = 20,
 
     parameter ADDR_WIDTH = 15,
     parameter PC_WIDTH = ADDR_WIDTH,
@@ -20,7 +20,6 @@ module CRP #(
     wire iOrD;
     wire readMemAddrFromReg;
     wire flagSrcSel;
-    wire aluOutSrcSel;
     wire regsOrAluSel;
     wire byteSwapEn;
     wire [1:0] regWriteSrcSel;
@@ -32,7 +31,6 @@ module CRP #(
     wire instrRegHighWriteEn;
     wire regsWriteEn;
     wire flagsWriteEn;
-    wire aluOutWriteEn;
     wire [FLAGS_WIDTH-1:0] flagsOut;
     wire [INSTR_WIDTH-1:0] instrBus;
 
@@ -52,7 +50,6 @@ module CRP #(
         .iOrD(iOrD),
         .readMemAddrFromReg(readMemAddrFromReg),
         .flagSrcSel(flagSrcSel),
-        .aluOutSrcSel(aluOutSrcSel),
         .regsOrAluSel(regsOrAluSel),
         .byteSwapEn(byteSwapEn),
         .regWriteSrcSel(regWriteSrcSel),
@@ -64,7 +61,6 @@ module CRP #(
         .instrRegHighWriteEn(instrRegHighWriteEn),
         .regsWriteEn(regsWriteEn),
         .flagsWriteEn(flagsWriteEn),
-        .aluOutWriteEn(aluOutWriteEn),
         .memWriteReq(memWriteReq),
         .aluControl(aluControl)
     );
@@ -82,7 +78,6 @@ module CRP #(
         .iOrD(iOrD),
         .readMemAddrFromReg(readMemAddrFromReg),
         .flagSrcSel(flagSrcSel),
-        .aluOutSrcSel(aluOutSrcSel),
         .regsOrAluSel(regsOrAluSel),
         .byteSwapEn(byteSwapEn),
         .regWriteSrcSel(regWriteSrcSel),
@@ -95,7 +90,6 @@ module CRP #(
         .instrRegHighWriteEn(instrRegHighWriteEn),
         .regsWriteEn(regsWriteEn),
         .flagsWriteEn(flagsWriteEn),
-        .aluOutWriteEn(aluOutWriteEn),
         .memReadBus(memReadBus),
         .memReqBus(memReqBus),
         .flagsOut(flagsOut),

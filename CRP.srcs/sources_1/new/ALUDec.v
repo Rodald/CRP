@@ -157,7 +157,7 @@ module ALURtypeDec #(
             end
             POP, POPF: begin
                 case (state)
-                    3'd3: aluControl = ADD_CTRL;
+                    3'd2: aluControl = ADD_CTRL;
                     default: aluControl = 3'b000;
                 endcase
             end

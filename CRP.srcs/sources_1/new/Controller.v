@@ -2,7 +2,7 @@ module Controller #(
     parameter OPCODE_WIDTH = 4,
     parameter FUNC_WIDTH = 4,
     parameter FLAGS_WIDTH = 4,
-    parameter CONTROL_WIDTH = 22
+    parameter CONTROL_WIDTH = 20
 )(
     input clk, reset,
     input wire [OPCODE_WIDTH-1:0] opcode,
@@ -14,7 +14,6 @@ module Controller #(
     output wire iOrD,
     output wire readMemAddrFromReg,   // controls if the register file should read the targeted memory addr.
     output wire flagSrcSel,
-    output wire aluOutSrcSel,
     output wire regsOrAluSel,
     output wire byteSwapEn,
 
@@ -30,7 +29,6 @@ module Controller #(
     output wire instrRegHighWriteEn,
     output wire regsWriteEn,
     output wire flagsWriteEn,
-    output wire aluOutWriteEn,
     output wire memWriteReq,
 
     output wire [2:0] aluControl
@@ -60,7 +58,6 @@ module Controller #(
         .iOrD(iOrD),
         .readMemAddrFromReg(readMemAddrFromReg),
         .flagSrcSel(flagSrcSel),
-        .aluOutSrcSel(aluOutSrcSel),
         .regsOrAluSel(regsOrAluSel),
         .byteSwapEn(byteSwapEn),
         .regWriteSrcSel(regWriteSrcSel),
@@ -72,7 +69,6 @@ module Controller #(
         .instrRegHighWriteEn(instrRegHighWriteEn),
         .regsWriteEn(regsWriteEn),
         .flagsWriteEn(flagsWriteEn),
-        .aluOutWriteEn(aluOutWriteEn),
         .memWriteReq(memWriteReq)
     );
 

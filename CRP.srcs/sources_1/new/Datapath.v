@@ -12,7 +12,6 @@ module Datapath #(
     input wire iOrD,
     input wire readMemAddrFromReg,   // controls if the register file should read the targeted memory addr.
     input wire flagSrcSel,
-    input wire aluOutSrcSel,
     input wire regsOrAluSel,
     input wire byteSwapEn,
 
@@ -29,7 +28,6 @@ module Datapath #(
     input wire instrRegHighWriteEn,
     input wire regsWriteEn,
     input wire flagsWriteEn,
-    input wire aluOutWriteEn,
 
     // memory
     input wire [DATA_WIDTH-1:0] memReadBus,
@@ -180,13 +178,13 @@ module Datapath #(
     );
 
     wire [3:0] aluFlagsOut;
-    wire [14:0] aluResult;
+    wire [14:0] aluOutBus;
     ALU #(15, DATA_WIDTH) alu(
         .aluControl(aluControl),
         .src1(aluSrc1),
         .src2(aluSrc2),
         .flags(aluFlagsOut),
-        .result(aluResult)
+        .result(aluOutBus)
     );
 
     wire [3:0] flagSrc;
@@ -206,23 +204,6 @@ module Datapath #(
     );
 
     assign flagsOut = flagRegOut;
-
-    wire [14:0] aluOutRegOut;
-    Register #(15, 15'b0) aluOutReg(
-        .clk(clk),
-        .reset(reset),
-        .writeEn(aluOutWriteEn),
-        .dataIn(aluResult),
-        .dataOut(aluOutRegOut)
-    );
-
-    wire [14:0] aluOutBus;
-    Mux2 #(15) aluOutSrcSelMux(
-        .d0(aluResult),
-        .d1(aluOutRegOut),
-        .sel(aluOutSrcSel),
-        .out(aluOutBus)
-    );
 
     wire [14:0] regBus;
     // chop off last bit from reg2 (addrWidth is only 15 bit)
