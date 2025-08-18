@@ -8,8 +8,8 @@ module StateCounter #(
     output reg  [COUNTER_WIDTH-1:0] count
 );
 
-    always @(negedge clk, posedge reset) begin
-        if (reset | resetState)
+    always @(negedge clk) begin
+        if (reset || resetState)
             count <= 0;
         else
             count <= count + 1;

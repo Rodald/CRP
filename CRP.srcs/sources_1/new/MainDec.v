@@ -1,6 +1,3 @@
-
-
-
 module MainDecoder #(
     parameter OPCODE_WIDTH = 4,
     parameter FUNC_WIDTH = 4,
@@ -46,7 +43,7 @@ module MainDecoder #(
     localparam [1*CONTROL_WIDTH-1:0] CMPI_DATA = 22'b1_x_x_0_0_x_x_x_xx_10_10_x_x_x_x_x_1_x_x;
     localparam [1*CONTROL_WIDTH-1:0] MOVI_DATA = 22'b1_x_x_0_x_x_x_x_10_xx_xx_x_x_x_x_1_x_x_x;
     localparam [1*CONTROL_WIDTH-1:0] RJMP_DATA = 22'b1_x_x_x_x_0_1_x_xx_00_11_1_x_x_x_x_x_x_x;
-    localparam [6*CONTROL_WIDTH-1:0] RET_DATA = {
+    localparam [5*CONTROL_WIDTH-1:0] RET_DATA = {
         22'b1_x_x_0_x_x_0_x_xx_00_xx_1_x_x_x_x_x_x_x, // write pc lower & trashReg in pc
         22'b0_x_x_0_x_x_0_x_01_10_xx_1_x_x_x_1_x_x_x, // write from dataReadReg in trash reg
         22'b0_1_1_x_x_x_x_0_01_xx_xx_x_x_x_x_1_x_x_x, // write from dataReadReg in trash reg & read

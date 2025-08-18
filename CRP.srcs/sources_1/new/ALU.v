@@ -19,7 +19,7 @@ module ALU #(
 
     wire sign_a = src1[REG_DATA_WIDTH-1];
     wire sign_b = src2[REG_DATA_WIDTH-1];
-    wire sign_r = result[REG_DATA_WIDTH-1];
+    reg sign_r;
 
     // output wire contrains 8 data bits and the 9th carry/borrow bit
     reg signed [DATA_WIDTH-1:0] outputWire;
@@ -31,9 +31,9 @@ module ALU #(
         case (aluControl)
             ADD: outputWire = src1 + src2;
             SUB_CMP: outputWire = src1 - src2;
-            AND: outputWire = src1[REG_DATA_WIDTH-1:0] & src2[REG_DATA_WIDTH-1:0];
-            OR:  outputWire = src1[REG_DATA_WIDTH-1:0] | src2[REG_DATA_WIDTH-1:0];
-            XOR: outputWire = src1[REG_DATA_WIDTH-1:0] ^ src2[REG_DATA_WIDTH-1:0];
+            AND: outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] & src2[REG_DATA_WIDTH-1:0];
+            OR:  outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] | src2[REG_DATA_WIDTH-1:0];
+            XOR: outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] ^ src2[REG_DATA_WIDTH-1:0];
             // only use first 3 bits for shiftig. No need to shift a num 255x
             LSL: outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] << src2[2:0];
             LSR: outputWire[REG_DATA_WIDTH-1:0] = src1[REG_DATA_WIDTH-1:0] >> src2[2:0];
@@ -43,6 +43,7 @@ module ALU #(
         endcase
 
         result = outputWire[DATA_WIDTH-1:0];
+        sign_r = result[REG_DATA_WIDTH-1];
 
         flags[0] = (result[REG_DATA_WIDTH-1:0] == 0);
         flags[1] = result[REG_DATA_WIDTH-1];

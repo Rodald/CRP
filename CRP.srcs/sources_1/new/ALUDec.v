@@ -15,7 +15,6 @@ module ALUDec #(
     localparam ANDI  = 4'b0100;
     localparam ORI   = 4'b0101;
     localparam XORI  = 4'b0110;
-    localparam MOV   = 4'b0111;
     localparam RJMP  = 4'b1000;
     localparam RET   = 4'b1001;
     localparam RCALL = 4'b1010;
@@ -30,9 +29,6 @@ module ALUDec #(
     localparam AND_CTRL = 3'b010;
     localparam OR_CTRL  = 3'b011;
     localparam XOR_CTRL = 3'b100;
-    localparam LSL_CTRL = 3'b101;
-    localparam LSR_CTRL = 3'b110;
-    localparam ASR_CTRL = 3'b111;
 
     wire [2:0] rTypeControl;
     ALURtypeDec #(.FUNC_WIDTH(FUNC_WIDTH)) aluRtypeDec (func, state, rTypeControl);
