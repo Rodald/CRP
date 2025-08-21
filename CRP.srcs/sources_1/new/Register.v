@@ -9,7 +9,7 @@ module Register #(
     output reg [WIDTH-1:0] dataOut
 );
 
-    always @ (posedge clk, posedge reset) begin
+    always @ (posedge clk) begin
         if (reset) dataOut <= RESET_VALUE;
         else if (writeEn) dataOut <= dataIn;
     end
