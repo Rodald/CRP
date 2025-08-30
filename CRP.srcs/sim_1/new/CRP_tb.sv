@@ -15,26 +15,26 @@ module CRP_tb;
     always #10 clk = ~clk;
 
     // DUT: CPU
-//    CRP dut (
-//        .clk(clk),
-//        .reset(reset),
-//        .memReadBus(memReadBus),
-//        .memReqBus(memReqBus),
-//        .memWriteReq(memWriteReq)
-//    );
+    CRP dut (
+        .clk(clk),
+        .reset(reset),
+        .memReadBus(memReadBus),
+        .memReqBus(memReqBus),
+        .memWriteReq(memWriteReq)
+    );
     wire [7:0] uio_oe;
     assign uio_oe = 8'b11111111;
 
-    synth dut(
-        .clk(clk),
-        .ena(1'b1),
-        .rst_n(~reset),
-        .ui_in(memReadBus),
-        .uio_in(8'b00000000),
-        .uio_oe(uio_oe),
-        .uio_out({memWriteReq, memReqBus[14:8]}),
-        .uo_out(memReqBus[7:0])
-    );
+//    synth dut(
+//        .clk(clk),
+//        .ena(1'b1),
+//        .rst_n(~reset),
+//        .ui_in(memReadBus),
+//        .uio_in(8'b00000000),
+//        .uio_oe(uio_oe),
+//        .uio_out({memWriteReq, memReqBus[14:8]}),
+//        .uo_out(memReqBus[7:0])
+//    );
     
     SimpleMemory #(
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -74,6 +74,20 @@ module CRP_tb;
         testMulCheck();
         testMul2Check();
         testMul3Check();
+        testJeCheck();
+        testJneCheck();
+        testJmp1Check();
+        testJmp2Check();
+        testJmp3Check();
+        testJmp4Check();
+        testJmp5Check();
+        testJmp6Check();
+        testJmp7Check();
+        testJmp8Check();
+        testJmp9Check();
+        testJmp10Check();
+        testJmp11Check();
+        testJmp12Check();
 
         $display("=== FINISHED TESTS ===");
         #20 $finish;
@@ -274,7 +288,7 @@ module CRP_tb;
     endtask
     task testCmpCheck;
         begin
-            runTest("testCmp", 30);
+            runTest("testCmp", 35);
             assertMem(15'hff0, 8'd10);
             assertMem(15'h10f0, 8'd20);
 
@@ -351,6 +365,92 @@ module CRP_tb;
         begin
             runTest("testMul3", 50);
             assertMem(15'h7fff, 8'b01010000);
+        end
+    endtask
+    task testJeCheck;
+        begin
+            runTest("testJe", 50);
+            assertMem(15'h7fff, 8'b00000000);
+        end
+    endtask
+
+    task testJneCheck;
+        begin
+            runTest("testJne", 50);
+            assertMem(15'h7fff, 8'b00000000);
+        end
+    endtask
+    task testJmp1Check;
+        begin
+            runTest("testJmp1", 60);
+            assertMem(15'h7fff, 8'b00001101);
+        end
+    endtask
+
+    task testJmp2Check;
+        begin
+            runTest("testJmp2", 55);
+            assertMem(15'h7fff, 8'b00010010);
+        end
+    endtask
+    task testJmp3Check;
+        begin
+            runTest("testJmp3", 55);
+            assertMem(15'h7fff, 8'b00010100);
+        end
+    endtask
+    task testJmp4Check;
+        begin
+            runTest("testJmp4", 55);
+            assertMem(15'h7fff, 8'b00010010);
+        end
+    endtask
+    task testJmp5Check;
+        begin
+            runTest("testJmp5", 55);
+            assertMem(15'h7fff, 8'b00001101);
+        end
+    endtask
+    task testJmp6Check;
+        begin
+            runTest("testJmp6", 55);
+            assertMem(15'h7fff, 8'b00010101);
+        end
+    endtask
+    task testJmp7Check;
+        begin
+            runTest("testJmp7", 55);
+            assertMem(15'h7fff, 8'b00010010);
+        end
+    endtask
+    task testJmp8Check;
+        begin
+            runTest("testJmp8", 55);
+            assertMem(15'h7fff, 8'b00010100);
+        end
+    endtask
+    task testJmp9Check;
+        begin
+            runTest("testJmp9", 55);
+            assertMem(15'h7fff, 8'b00010011);
+        end
+    endtask
+    task testJmp10Check;
+        begin
+            runTest("testJmp10", 55);
+            assertMem(15'h7fff, 8'b00001101);
+        end
+    endtask
+    task testJmp11Check;
+        begin
+            runTest("testJmp11", 55);
+            assertMem(15'h7fff, 8'b00010011);
+        end
+    endtask
+    task testJmp12Check;
+        begin
+            runTest("testJmp12", 55);
+            assertMem(15'h7fff, 8'b00010100);
         end
     endtask
 endmodule
