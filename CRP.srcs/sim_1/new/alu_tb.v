@@ -70,6 +70,7 @@ module alu_crp_tb;
         test_case(4'b0001, 16'd128, 16'd1,   16'd127, 4'b1000, "SUB: 128 - 1 (signed overflow)");
         test_case(4'b0001, 16'd0,   16'd1,   16'd255, 4'b0110, "SUB: 0 - 1 (underflow to -1)");
         test_case(4'b0001, 16'd255, 16'd255, 16'd0,   4'b0001, "SUB: 255 - 255 = 0");
+        test_case(4'b0001, 16'd255, 16'd1,   16'd0,   4'b1110, "SUB: 255 - 1 = 0");
 
         // === ADDITIONAL SUB / CMP TESTS (unsigned + signed edge cases) ===
 

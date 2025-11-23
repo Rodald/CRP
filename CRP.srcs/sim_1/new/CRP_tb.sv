@@ -15,26 +15,26 @@ module CRP_tb;
     always #10 clk = ~clk;
 
     // DUT: CPU
-    CRP dut (
-        .clk(clk),
-        .reset(reset),
-        .memReadBus(memReadBus),
-        .memReqBus(memReqBus),
-        .memWriteReq(memWriteReq)
-    );
+//    CRP dut (
+//        .clk(clk),
+//        .reset(reset),
+//        .memReadBus(memReadBus),
+//        .memReqBus(memReqBus),
+//        .memWriteReq(memWriteReq)
+//    );
     wire [7:0] uio_oe;
     assign uio_oe = 8'b11111111;
 
-//    synth dut(
-//        .clk(clk),
-//        .ena(1'b1),
-//        .rst_n(~reset),
-//        .ui_in(memReadBus),
-//        .uio_in(8'b00000000),
-//        .uio_oe(uio_oe),
-//        .uio_out({memWriteReq, memReqBus[14:8]}),
-//        .uo_out(memReqBus[7:0])
-//    );
+    synth dut(
+        .clk(clk),
+        .ena(1'b1),
+        .rst_n(~reset),
+        .ui_in(memReadBus),
+        .uio_in(8'b00000000),
+        .uio_oe(uio_oe),
+        .uio_out({memWriteReq, memReqBus[14:8]}),
+        .uo_out(memReqBus[7:0])
+    );
     
     SimpleMemory #(
         .ADDR_WIDTH(ADDR_WIDTH),
